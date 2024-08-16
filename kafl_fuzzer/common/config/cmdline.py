@@ -23,7 +23,6 @@ from typing import Any
 
 from .settings import settings
 from kafl_fuzzer.manager.core import start as fuzz_start
-from kafl_fuzzer.debug.core import start as debug_start
 from kafl_fuzzer.coverage import start as cov_start
 from kafl_fuzzer.gui import start as gui_start
 from kafl_fuzzer.plot import start as plot_start
@@ -78,6 +77,10 @@ def add_args_general(parser):
                         action='store_true', default=False)
     parser.add_argument('--debug', help='enable extra debug checks and max logging verbosity',
                         action='store_true', default=False)
+    parser.add_argument('-i', '--interface', required=False, metavar='<file>', default=False,
+                        help='enable interfacing')
+    parser.add_argument('--use_call_stack', required=False, help='not validate crash and minimization crash within call stack trace mode',
+                        action='store_true', default=False)
 
 # kAFL/Fuzzer-specific options
 def add_args_fuzzer(parser):
@@ -102,13 +105,13 @@ def add_args_fuzzer(parser):
     parser.add_argument('--redqueen-hammer', required=False, action='store_true', help=hidden('enable Redqueen jump table hammering'), default=False)
     parser.add_argument('--redqueen-simple', required=False, action='store_true', help=hidden('do not ignore simple matches in Redqueen'), default=False)
     parser.add_argument('--cpu-offset', metavar='<n>', help="start CPU pinning at offset <n>", required=False)
-    parser.add_argument('--abort-time', metavar='<n>', help="exit after <n> hours", default=None)
+    parser.add_argument('--abort-time', metavar='<n>', help="exit after <n> minutes", default=None)
     parser.add_argument('--abort-exec', metavar='<n>', help="exit after max <n> executions", default=None)
     parser.add_argument('-ts', '--t-soft', dest='timeout_soft', required=False, metavar='<n>', help="soft execution timeout (in seconds)")
     parser.add_argument('-tc', '--t-check', dest='timeout_check', required=False, action='store_true', help="validate timeouts against hard limit (slower)", default=False)
     parser.add_argument('--kickstart', metavar='<n>', help="kickstart fuzzing with <n> byte random strings (default 256, 0 to disable)", required=False)
     parser.add_argument('--radamsa-path', metavar='<file>', help=hidden('path to radamsa executable'), required=False)
-
+    parser.add_argument('--maker', dest='play_maker', required=False, metavar='<n>', help="test make after <n> seconds", default=None)
 
 # Qemu/Worker-specific launch options
 def add_args_qemu(parser):
@@ -196,7 +199,7 @@ class ConfigParserBuilder():
         qemu_grp = debug_subcommand.add_argument_group('Qemu/Nyx options')
         add_args_qemu(qemu_grp)
 
-        debug_subcommand.set_defaults(func=debug_start)
+        # debug_subcommand.set_defaults(func=debug_start)
 
     def _add_cov_subcommand(self, parser: _SubParsersAction):
         cov_subcommand: ArgumentParser = parser.add_parser(KaflSubcommands.COV.name.lower(), help="kAFL Coverage Analyzer")

@@ -463,8 +463,7 @@ class WorkerTask:
             if stable:
                 self.__send_to_manager(data, exec_res, info)
             elif crash:
-                if self.crash_validate(data, exec_res) is True:
-                    if self.config.use_call_stack:
+                if self.config.use_call_stack:
                     self.__send_to_manager(data, exec_res, info)
                 else:
                     if self.crash_validate(data, exec_res) is True:

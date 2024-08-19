@@ -227,6 +227,9 @@ class Interface:
             payload = self.__generateIRP(iocode)
             with open(seed_dir+f"/{hex(iocode)}_{str(hash(payload))}","wb") as file:
                 file.write(payload)
+        
+        import time
+        time.sleep(3)
 
     def get_all_codes(self):
         return self.interface.keys()

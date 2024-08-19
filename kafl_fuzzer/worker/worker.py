@@ -211,9 +211,9 @@ class WorkerTask:
         serialize(refined_list)
         exec_res = self.__execute(payload)
         if not exec_res.is_crash():
-            return serialize(payload_list)
+            return serialize(payload_list), False
         else:        
-            return serialize(refined_list)
+            return serialize(refined_list), True
 
     
 
@@ -471,8 +471,15 @@ class WorkerTask:
                         self.store_funky(data)
 
 
-                        refined_data = self.quick_crash_diet(data, exec_res)
-                        self.__send_to_manager(refined_data, exec_res, info)
+                        refined_data, diet_error = self.quick_crash_diet(data, exec_res)
+
+                        if not diet_error:
+                            self.__send_to_manager(refined_data, exec_res, info)
+                        elif diet_error:
+                            print('there is diet error')
+                            self.__send_to_manager(data, exec_res, info)
+                        else:
+                            assert(0==1), print("this code nevere be executed")
                     else:
                         ## it is not crash ##
                         #self.store_funky(data)

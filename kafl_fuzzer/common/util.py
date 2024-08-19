@@ -394,7 +394,6 @@ def prepare_working_dir(config):
 def prepare_dependency_dir(config, dependency_list):
 
     workdir   = config.workdir
-    purge      = config.purge
     resume     = config.resume
 
     folders = ["/dependency"]

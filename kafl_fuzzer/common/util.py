@@ -50,7 +50,7 @@ MAX_RAND_VALUES_SIZE = 0x400
 
 MAX_RANGE_VALUE = 0xffffffff
 
-interesting_length = [1<<i for i in range(33)]
+interesting_length = [1<<i for i in range(20)]
 
 
 class IRP:

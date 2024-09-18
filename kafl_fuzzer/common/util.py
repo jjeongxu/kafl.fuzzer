@@ -55,7 +55,7 @@ interesting_length = [1<<i for i in range(20)]
 
 class IRP:
     def __init__(self, IoControlCode=0, InBuffer_length=0, OutBuffer_length=0, InBuffer=b'', Command=0):
-        self.Command = u32(Command)
+        self.Command = Command
         self.IoControlCode = u32(IoControlCode)
         self.InBuffer_length = u32(InBuffer_length)
         self.OutBuffer_length = u32(OutBuffer_length)
@@ -88,7 +88,7 @@ def serialize(target_list):
         is_multi_irp = True if len(target_list)>1 else False
         for index in range(len(target_list)):
             cur = target_list[index]
-            result += p32(cur.Command) + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length)  + cur.InBuffer
+            result += cur.Command + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length)  + cur.InBuffer
         return result, is_multi_irp
     except AttributeError:
         print(f"Attribute Erorr :::::::::::::::::::: {cur} {target_list}")
@@ -122,7 +122,7 @@ def serialize_sangjun(headers, datas):
 irp_list = []
 
 def parse_payload(cur):
-    return p32(cur.Command) + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length), cur.InBuffer
+    return cur.Command + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length), cur.InBuffer
 
 
 def parse_all(data):
@@ -151,7 +151,7 @@ def parse_header_and_data(target_list):
     for index in range(len(target_list)):
 
         def steam_header_data(cur):
-            return p32(cur.Command) + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length), cur.InBuffer
+            return cur.Command + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length), cur.InBuffer
 
         header, data = steam_header_data(target_list[index])
 
@@ -201,9 +201,9 @@ class Interface:
         inlength = inlength if inlength != MAX_RANGE_VALUE-1 else MAX_BUFFER_LEN
         outlength = outlength if outlength != MAX_RANGE_VALUE-1 else MAX_BUFFER_LEN
 
-        irp = IRP(p32(iocode), p32(inlength), p32(outlength), Command = p32(random.randrange(0,4294967295)))
+        irp = IRP(p32(iocode), p32(inlength), p32(outlength),Command=random.randrange(0,4294967295).to_bytes(4, byteorder='big'))
 
-        return p32(irp.Command) + p32(irp.IoControlCode) + p32(irp.InBuffer_length) + p32(irp.OutBuffer_length) + irp.InBuffer
+        return irp.Command + p32(irp.IoControlCode) + p32(irp.InBuffer_length) + p32(irp.OutBuffer_length) + irp.InBuffer
 
 
     def generate(self, seed_dir):

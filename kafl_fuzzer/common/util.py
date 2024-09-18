@@ -201,7 +201,7 @@ class Interface:
         inlength = inlength if inlength != MAX_RANGE_VALUE-1 else MAX_BUFFER_LEN
         outlength = outlength if outlength != MAX_RANGE_VALUE-1 else MAX_BUFFER_LEN
 
-        irp = IRP(p32(iocode), p32(inlength), p32(outlength),Command=p32(random.randrange(0,4294967295)))
+        irp = IRP(p32(iocode), p32(inlength), p32(outlength), Command = p32(random.randrange(0,4294967295)))
 
         return p32(irp.Command) + p32(irp.IoControlCode) + p32(irp.InBuffer_length) + p32(irp.OutBuffer_length) + irp.InBuffer
 

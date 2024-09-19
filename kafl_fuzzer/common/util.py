@@ -165,7 +165,7 @@ def to_range(rg):
     start, end = rg.split('-')
     return range(int(start), int(end) + 1 if end != 'inf' else MAX_RANGE_VALUE)
 
-import random
+
 class Interface:
     def __init__(self):
         self.interface = {}
@@ -201,7 +201,7 @@ class Interface:
         inlength = inlength if inlength != MAX_RANGE_VALUE-1 else MAX_BUFFER_LEN
         outlength = outlength if outlength != MAX_RANGE_VALUE-1 else MAX_BUFFER_LEN
 
-        irp = IRP(p32(iocode), p32(inlength), p32(outlength),Command=random.randrange(0,4294967295).to_bytes(4, byteorder='big'))
+        irp = IRP(p32(iocode), p32(inlength), p32(outlength),Command=b"IOIO")
 
         return irp.Command + p32(irp.IoControlCode) + p32(irp.InBuffer_length) + p32(irp.OutBuffer_length) + irp.InBuffer
 

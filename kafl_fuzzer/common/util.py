@@ -37,6 +37,7 @@ COMMAND = 4
 IOCTL_CODE = 8
 INBUFFER_LENGTH = 12
 OUTBUFFER_LENGTH = 16
+RANDVAL = 20
 
 AFL_HAVOC_MIN = 256
 MAX_BUFFER_LEN = 0x2000
@@ -54,11 +55,12 @@ interesting_length = [1<<i for i in range(20)]
 
 
 class IRP:
-    def __init__(self, IoControlCode=0, InBuffer_length=0, OutBuffer_length=0, InBuffer=b'', Command=0):
+    def __init__(self, IoControlCode=0, InBuffer_length=0, OutBuffer_length=0, InBuffer=b'', Command=0, RandVal=0):
         self.Command = Command
         self.IoControlCode = u32(IoControlCode)
         self.InBuffer_length = u32(InBuffer_length)
         self.OutBuffer_length = u32(OutBuffer_length)
+        self.RandVal = u32(RandVal)
         if InBuffer == b'':
             self.InBuffer = bytearray( b"\xff" * self.InBuffer_length)
         else:
@@ -76,10 +78,11 @@ def add_to_irp_list(target_list, data):
         ioctl_code = data[start + COMMAND: start + IOCTL_CODE]
         inbuffer_length = data[start + IOCTL_CODE: start + INBUFFER_LENGTH]
         outbuffer_length = data[start + INBUFFER_LENGTH: start + OUTBUFFER_LENGTH]
-        payload = data[start+OUTBUFFER_LENGTH:start+OUTBUFFER_LENGTH + u32(inbuffer_length,debug=data)].ljust(u32(inbuffer_length),b"\xff")
+        random_value = data[start + OUTBUFFER_LENGTH: start + RANDVAL]
+        payload = data[start+RANDVAL:start+RANDVAL + u32(inbuffer_length,debug=data)].ljust(u32(inbuffer_length),b"\xff")
 
         start = start +u32(inbuffer_length) + OUTBUFFER_LENGTH
-        target_list.append(IRP(ioctl_code, inbuffer_length, outbuffer_length, payload,command))
+        target_list.append(IRP(ioctl_code, inbuffer_length, outbuffer_length, payload, command, random_value))
 
 def serialize(target_list):
     result = b""
@@ -88,7 +91,7 @@ def serialize(target_list):
         is_multi_irp = True if len(target_list)>1 else False
         for index in range(len(target_list)):
             cur = target_list[index]
-            result += cur.Command + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length)  + cur.InBuffer
+            result += cur.Command + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length)  + p32(cur.RandVal) + cur.InBuffer
         return result, is_multi_irp
     except AttributeError:
         print(f"Attribute Erorr :::::::::::::::::::: {cur} {target_list}")
@@ -105,11 +108,12 @@ def serialize_sangjun(headers, datas):
         ioctl_code = headers[header_start + COMMAND: header_start + IOCTL_CODE]
         inbuffer_length = headers[header_start + IOCTL_CODE: header_start + INBUFFER_LENGTH]
         outbuffer_length = headers[header_start + INBUFFER_LENGTH: header_start + OUTBUFFER_LENGTH]
+        random_value = headers[header_start + OUTBUFFER_LENGTH: header_start + RANDVAL]
         payload = datas[data_start: data_start + u32(inbuffer_length)]
 
-        header_start += OUTBUFFER_LENGTH
+        header_start += RANDVAL
         data_start += u32(inbuffer_length)
-        result+=command + ioctl_code + inbuffer_length + outbuffer_length + payload.ljust(u32(inbuffer_length),b"\xff")
+        result+=command + ioctl_code + inbuffer_length + outbuffer_length + random_value + payload.ljust(u32(inbuffer_length),b"\xff")
 
     count+=1
     if count >1:
@@ -122,7 +126,7 @@ def serialize_sangjun(headers, datas):
 irp_list = []
 
 def parse_payload(cur):
-    return cur.Command + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length), cur.InBuffer
+    return cur.Command + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length) + p32(cur.RandVal), cur.InBuffer
 
 
 def parse_all(data):
@@ -134,11 +138,12 @@ def parse_all(data):
         ioctl_code = data[start + COMMAND: start + IOCTL_CODE]
         inbuffer_length = data[start + IOCTL_CODE: start + INBUFFER_LENGTH]
         outbuffer_length = data[start + INBUFFER_LENGTH: start + OUTBUFFER_LENGTH]
+        random_value = data[start+OUTBUFFER_LENGTH: start+RANDVAL]
         payload = data[start+OUTBUFFER_LENGTH:start+OUTBUFFER_LENGTH + u32(inbuffer_length)].ljust(u32(inbuffer_length),b"\xff")
 
-        start = start +u32(inbuffer_length) + OUTBUFFER_LENGTH
+        start = start +u32(inbuffer_length) + RANDVAL
 
-        sequence.append(IRP(ioctl_code, inbuffer_length, outbuffer_length, payload,command))
+        sequence.append(IRP(ioctl_code, inbuffer_length, outbuffer_length, payload, command, random_value))
     return sequence
 
 
@@ -151,7 +156,7 @@ def parse_header_and_data(target_list):
     for index in range(len(target_list)):
 
         def steam_header_data(cur):
-            return cur.Command + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length), cur.InBuffer
+            return cur.Command + p32(cur.IoControlCode) + p32(cur.InBuffer_length) + p32(cur.OutBuffer_length) + p32(cur.RandVal), cur.InBuffer
 
         header, data = steam_header_data(target_list[index])
 
@@ -201,9 +206,9 @@ class Interface:
         inlength = inlength if inlength != MAX_RANGE_VALUE-1 else MAX_BUFFER_LEN
         outlength = outlength if outlength != MAX_RANGE_VALUE-1 else MAX_BUFFER_LEN
 
-        irp = IRP(p32(iocode), p32(inlength), p32(outlength),Command=b"IOIO")
+        irp = IRP(p32(iocode), p32(inlength), p32(outlength),Command=b"IOIO", RandVal=p32(random.randrange(0, 4294967296)))
 
-        return irp.Command + p32(irp.IoControlCode) + p32(irp.InBuffer_length) + p32(irp.OutBuffer_length) + irp.InBuffer
+        return irp.Command + p32(irp.IoControlCode) + p32(irp.InBuffer_length) + p32(irp.OutBuffer_length) + p32(irp.RandVal) + irp.InBuffer
 
 
     def generate(self, seed_dir):

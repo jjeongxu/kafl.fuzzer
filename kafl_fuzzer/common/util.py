@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 import struct
 import json
+import inspect
 def u32(x, debug=None):
     try: 
         return struct.unpack('<L',x)[0]
@@ -27,6 +28,7 @@ def u32(x, debug=None):
         with open("/tmp/sangjun","wb") as f:
             f.write(debug)
         print(f"u32 error {x} {debug}")
+        print(inspect.stack())
         exit(0)
 
 def p32(x): return struct.pack('<I', x)
@@ -71,7 +73,7 @@ def add_to_irp_list(target_list, data):
 
     if len(target_list)>0:
         target_list.clear()
-    start =0 
+    start = 0
 
     while len(data) > start:
         command = data[start: start + COMMAND]
@@ -81,7 +83,7 @@ def add_to_irp_list(target_list, data):
         random_value = data[start + OUTBUFFER_LENGTH: start + RANDVAL]
         payload = data[start+RANDVAL:start+RANDVAL + u32(inbuffer_length,debug=data)].ljust(u32(inbuffer_length),b"\xff")
 
-        start = start +u32(inbuffer_length) + OUTBUFFER_LENGTH
+        start = start +u32(inbuffer_length) + RANDVAL
         target_list.append(IRP(ioctl_code, inbuffer_length, outbuffer_length, payload, command, random_value))
 
 def serialize(target_list):

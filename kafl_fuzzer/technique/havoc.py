@@ -240,12 +240,13 @@ def mutate_length(irp_list, index, func):
     for _ in range(retry):
         chosen = get_valid_length("InBuffer",IoControlCode)
         if chosen is not None:
-            target.InBuffer_length = chosen
+            
 
             if chosen > target.InBuffer_length:
-                target.InBuffer.ljust(chosen,b"\xff")
+                target.InBuffer = target.InBuffer.ljust(chosen, b"\xff")
             else:
                 target.InBuffer = target.InBuffer[:chosen]
+            target.InBuffer_length = chosen
 
 
         chosen = get_valid_length("OutBuffer",IoControlCode)

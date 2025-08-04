@@ -277,7 +277,7 @@ class Dependency:
         if target_index == -1:
             return None
         else:
-            for _ in range(100)
+            for _ in range(100):
                 num = random.choice(self.dependency[target_index])
                 if num==ioctl:
                     continue
